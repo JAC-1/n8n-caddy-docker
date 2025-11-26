@@ -1,29 +1,38 @@
-version: '3.8'
+version: "3.9"
 
 services:
-  redis:
-    image: redis:latest
-    volumes:
-      - redis_data:/data
-    restart: unless-stopped
-
   n8n:
-    image: docker.n8n.io/n8nio/n8n
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
     ports:
       - "5678:5678"
     environment:
-      - GENERIC_TIMEZONE=UTC
-      - TZ=UTC
-      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
-      - N8N_RUNNERS_ENABLED=true
-      - QUEUE_BULL_REDIS_HOST=redis
-      - QUEUE_BULL_REDIS_PORT=6379
+      - NODE_ENV=production
+      - EXECUTIONS_MODE=regular           # ← no Redis needed
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=${N8N_PROTOCOL:-http}
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-change_me_strong}
+      - TZ=Asia/Tokyo
     volumes:
       - n8n_data:/home/node/.n8n
-    depends_on:
-      - redis
+      - ./local_files:/files
+    extra_hosts:
+      - "hosts.docker.internal:host-gateway"
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
     restart: unless-stopped
+    ports:
+      - "6333:6333"
+      - "6334:6334"        # gRPC (optional)
+    volumes:
+      - qdrant_data:/qdrant/storage
 
 volumes:
   n8n_data:
-  redis_data:
+  qdrant_data:
