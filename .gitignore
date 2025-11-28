@@ -1,2 +1,5 @@
 .env
 /local_files/*
+# Ignore generated Templ files
+*_templ.go
+views/*_templ.go  # Or more specific if needed
