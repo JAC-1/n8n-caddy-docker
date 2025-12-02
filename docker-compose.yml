@@ -41,15 +41,7 @@ services:
     volumes:
       - redis_data:/data
 
-  go-app:
-    build: ./go-app
-    container_name: go-app
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-
 volumes:
   n8n_data:
   qdrant_data:
   redis_data:
-  redis_vector_data:
