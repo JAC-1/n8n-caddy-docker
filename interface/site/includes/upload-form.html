@@ -1,0 +1,31 @@
+<section class="mt-8 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+  <div class="mb-4">
+    <h2 class="text-xl font-semibold text-slate-900">Upload files to n8n</h2>
+    <p class="text-sm text-slate-600">Select one or more files and we will forward them to your workflow webhook.</p>
+  </div>
+
+  <form class="space-y-4" hx-post="http://localhost:5678/webhook-test/9e64f996-2940-4bd5-a1bd-f5df0db81db4"
+    hx-encoding="multipart/form-data" hx-target="#upload-status" hx-swap="innerHTML" hx-trigger="submit">
+    <div>
+      <label for="files" class="mb-2 block text-sm font-medium text-slate-700">Files</label>
+      <input id="files_" name="files" type="file"
+        class="block w-full cursor-pointer rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+        multiple required />
+      <p class="mt-2 text-xs text-slate-500">Allowed: any format handled by your workflow. You can drag-select or
+        Ctrl/Cmd-click for multiples.</p>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <button type="submit"
+        class="inline-flex items-center rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2">
+        Send to n8n
+      </button>
+      <button type="reset" class="text-sm font-medium text-slate-600 hover:text-slate-900">Clear</button>
+      <span class="htmx-indicator text-sm text-slate-500" role="status">Uploading…</span>
+    </div>
+  </form>
+
+  <div id="upload-status" class="mt-4 text-sm text-slate-600" aria-live="polite">
+    Waiting for upload…
+  </div>
+</section>

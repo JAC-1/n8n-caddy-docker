@@ -1,0 +1,866 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Test",
+        "formDescription": "Test",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "files",
+              "fieldType": "file",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ad9ff3a0-851d-422e-8ff0-2b7f94fb5ba3",
+      "name": "On form submission",
+      "type": "n8n-nodes-base.formTrigger",
+      "position": [
+        -256,
+        544
+      ],
+      "webhookId": "66af9d33-0d74-4728-8773-19734330131b",
+      "typeVersion": 2.3
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "files",
+        "options": {
+          "includeBinary": true
+        }
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        160,
+        320
+      ],
+      "id": "329d744f-42d9-426a-a1c0-c243f15adbd6",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        384,
+        320
+      ],
+      "id": "aa105806-2bb5-4323-aec0-afe4aecdf487",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.mimetype }}",
+                    "rightValue": "image",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    },
+                    "id": "6ac18e58-41ab-44e0-bf36-d1047fb32c1c"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Image"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "d67cf6ee-c0ca-40fa-b89f-50b7757f9a33",
+                    "leftValue": "={{ $json.mimetype }}",
+                    "rightValue": "pdf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "pdf"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "d9565d40-da97-4dfc-8a3a-7cfe822d98b1",
+                    "leftValue": "={{ $json.mimetype }}",
+                    "rightValue": "octet-stream",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "markdown"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        832,
+        128
+      ],
+      "id": "653cd182-1157-409c-8524-9908db690557",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "const extractedData = $input.first().json;\nconst upload_date = $('On form submission').first().json.submittedAt;\nconst file_meta = $('Loop Over Items').first().json;\n\n// Parse Markdown\nif (!extractedData.pages && file_meta.mimetype.includes(\"octet\")) {\n return  {\n   json: {\n    pageContent: extractedData.data,\n    metadata: {\n      source: `${file_meta.filename}`,\n      originalBlobType: file_meta.mimetype,\n      blobType: \"text/markdown\",\n      uploadDate: upload_date,\n    }\n  }\n  }\n}\n\n// Parse OCR\nelse {\n  return extractedData.pages.map((page, i) => ({\n  json: {\n    pageContent: page.markdown.trim(),\n    metadata: {\n      source: `${file_meta.filename}`,\n      originalBlobType: file_meta.mimetype,\n      blobType: \"text/markdown\",\n      page: i + 1,\n      uploadDate: upload_date,\n      model: extractedData.model || \"\",\n      image:  {\n        imageData: page.images || \"\",\n        imageAnalysis: \"\"\n      }\n    }\n  }\n}));\n}\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        144
+      ],
+      "id": "166c989c-8ed2-4a19-885b-2f22db37189a",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "prep_education_notes",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        1504,
+        320
+      ],
+      "id": "3a0d619d-71ad-4505-8964-13058e7515e4",
+      "name": "Qdrant Vector Store",
+      "credentials": {
+        "qdrantApi": {
+          "id": "T4Fh7deQxrVB1Dbz",
+          "name": "QdrantApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1520,
+        544
+      ],
+      "id": "84edd931-7113-4f31-a7b4-e1cf71ce57a5",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "52i4qybiLiN2qpeT",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.pageContent }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "source",
+                "value": "={{ $json.metadata.source }}"
+              },
+              {
+                "name": "originalBlobType",
+                "value": "={{ $json.metadata.originalBlobType }}"
+              },
+              {
+                "name": "blobType",
+                "value": "={{ $json.metadata.blobType }}"
+              },
+              {
+                "name": "page",
+                "value": "={{ $json.metadata.page }}"
+              },
+              {
+                "name": "uploadDate",
+                "value": "={{ $json.metadata.uploadDate }}"
+              },
+              {
+                "name": "model",
+                "value": "={{ $json.metadata.model}} "
+              },
+              {
+                "name": "=image",
+                "value": "={{ $json.metadata.image }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        1776,
+        528
+      ],
+      "id": "f495253d-0b87-42ea-bfb4-be2298e5c107",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "binaryPropertyName": "=files{{$runIndex}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        1056,
+        336
+      ],
+      "id": "e0787fcf-eeb0-466c-8e31-db383da992fa",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "binaryProperty": "=files{{$json.index}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mistralAi",
+      "typeVersion": 1,
+      "position": [
+        1056,
+        144
+      ],
+      "id": "d0165520-0279-4d10-9c0d-477336f3dd30",
+      "name": "Extract text1",
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "DdFGni2gnCwoYHcZ",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1c3be16c-1fc6-4121-8c87-8518da5755cd",
+              "name": "=index",
+              "value": "={{ $runIndex }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        608,
+        144
+      ],
+      "id": "0dd5ed8e-1d27-44d5-a4c0-35190d0864d3",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "deleteCollection",
+        "collectionName": {
+          "__rl": true,
+          "value": "prep_education_notes",
+          "mode": "list",
+          "cachedResultName": "prep_education_notes"
+        },
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-qdrant.qdrant",
+      "typeVersion": 1,
+      "position": [
+        1824,
+        1200
+      ],
+      "id": "e151b2ba-eae6-4e8d-8b93-8fc0554395c9",
+      "name": "Delete Collection",
+      "credentials": {
+        "qdrantRestApi": {
+          "id": "5lz1SvWwIZEaC0Rr",
+          "name": "Qdrant account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "9e64f996-2940-4bd5-a1bd-f5df0db81db4",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -80,
+        128
+      ],
+      "id": "d0cb7f4d-5a33-4002-81f6-51872dc62e0b",
+      "name": "Webhook",
+      "webhookId": "9e64f996-2940-4bd5-a1bd-f5df0db81db4"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * For each incoming item:\n *  - Inspect item.binary for keys that start with \"files\".\n *  - Build a JSON array of file descriptors (filename, mimetype, size).\n *  - Preserve the binary data so downstream nodes can still access it.\n */\nreturn $input.all().map(item => {\n  const fileEntries = Object.entries(item.binary ?? {})\n    .filter(([key]) => key.startsWith('files')) // files, files_0, files_1...\n    .map(([key, bin]) => ({\n      filename: bin.fileName ?? key,\n      mimetype: bin.mimeType ?? 'application/octet-stream',\n      size: bin.fileSize ?? bin.data?.length ?? null,\n      binaryProperty: key, // useful later if you need to refer back\n    }));\n\n  return {\n    json: {\n      files: fileEntries,\n      submittedAt: $now,\n      formMode: \"test\",\n      // ...item.json, // keep any other form fields\n    },\n    binary: item.binary ?? {},\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        96,
+        128
+      ],
+      "id": "f087c47c-c2a7-4a23-8c15-66c9307bf8d1",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\n\n\nreturn $input.first().binary;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -96,
+        528
+      ],
+      "id": "5c927787-d0d1-4326-9c36-998c1d052322",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $if($json.body, $json.body.message, $json.chatInput) }}",
+        "options": {
+          "systemMessage": "ALWAYS USE MARKDOWN\n\nYou are an academic assistant proficient in EFL education, research, and methodologies. If questions are deemed necessary, query the vector database for relevant documents. If you reference documents, include relevant pages, locations, sections, quotes, and other carefully thought out references and information.\n\n---\n{ context }",
+          "enableStreaming": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        720,
+        960
+      ],
+      "id": "f6199cce-9ed4-4152-92ed-7e0d0b173253",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $if($('ChatWebhook').isExecuted, \"webhook\".concat( $('ChatWebhook').item.json.headers['chat-id']), \"n8nchat_\".concat($('When chat message received').item.json.sessionId)) }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.5,
+      "position": [
+        752,
+        1168
+      ],
+      "id": "e59ffb68-282c-45d9-8bea-b07e8d16fb61",
+      "name": "Redis Chat Memory",
+      "credentials": {
+        "redis": {
+          "id": "l2WB7TbEmXDnB0aX",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "gpt-3.5-turbo"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        640,
+        1136
+      ],
+      "id": "b1d5b8fb-2582-4c3e-a8c8-143446964e4b",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "52i4qybiLiN2qpeT",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Work with the data in the Qdrant vector store",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "prep_education_notes",
+          "mode": "list",
+          "cachedResultName": "prep_education_notes"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        1136,
+        1152
+      ],
+      "id": "1853e791-8af5-43c6-becc-662d9986a3bf",
+      "name": "Qdrant Vector Store1",
+      "credentials": {
+        "qdrantApi": {
+          "id": "T4Fh7deQxrVB1Dbz",
+          "name": "QdrantApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        448,
+        1008
+      ],
+      "id": "3d56edec-3742-46c8-86da-9a43c96887ba",
+      "name": "When chat message received",
+      "webhookId": "c98f7008-71ce-415a-977d-daf84657ab90"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.html }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1776,
+        960
+      ],
+      "id": "564516ce-854d-4d02-99e6-780de18a8ea2",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "443e2933-78c3-4ba2-b8f5-71a5e6c9e3f8",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        464,
+        880
+      ],
+      "id": "c7fae74d-3d9e-44a6-8e3d-fbcf45415523",
+      "name": "ChatWebhook",
+      "webhookId": "443e2933-78c3-4ba2-b8f5-71a5e6c9e3f8"
+    },
+    {
+      "parameters": {
+        "html": "<style>\n.message-card {\n  max-width: 70%;\n  padding: 1.5rem 1.7rem;\n  border: 0.5px solid #A7C7E7; /* dark slate */\n  color: black;\n  border-radius: 12px; /* slightly cuter rounding */\n  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); /* softer shadow for depth */\n  margin-bottom: 16px;\n  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;\n  line-height: 1.6;\n  position: relative;\n  transition: transform 0.15s ease;\n}\n\n.message-card:hover {\n  transform: translateY(-1px); /* subtle lift on hover */\n}\n.message-card h1,\n.message-card h2,\n.message-card h3,\n.message-card h4,\n.message-card h5,\n.message-card h6 {\n  margin-top: 1rem;\n  margin-bottom: 0.5rem;\n  font-weight: 600;\n}\n\n.message-card p {\n  margin-bottom: 0.75rem;\n  line-height: 1.6;\n}\n\n.message-card ul,\n.message-card ol {\n  margin-bottom: 0.75rem;\n  padding-left: 1.5rem;\n}\n\n.message-card li {\n  margin-bottom: 0.25rem;\n  text-decor\n}\n\n.message-card blockquote {\n  margin: 0.75rem 0;\n  padding: 0.5rem 1rem;\n  border-left: 4px solid #6b7280;\n  background: rgba(107, 114, 128, 0.1);\n  font-style: italic;\n}\n\n.message-card code {\n  background: rgba(0, 0, 0, 0.1);\n  padding: 0.125rem 0.25rem;\n  border-radius: 3px;\n  font-family: 'Monaco', 'Consolas', monospace;\n  font-size: 0.9em;\n}\n\n.message-card pre {\n  margin: 0.75rem 0;\n  padding: 0.75rem;\n  background: #1f2937;\n  border-radius: 6px;\n  overflow-x: auto;\n}\n\n.message-card pre code {\n  background: none;\n  padding: 0;\n  border-radius: 0;\n}\n.message-card ul {\n  list-style: none;\n  margin-bottom: 0.75rem;\n  padding-left: 0;\n}\n\n.message-card ul li {\n  position: relative;\n  padding-left: 1.25rem;\n}\n\n.message-card ul li::before {\n  content: \"▸\"; /* arrow bullet */\n  position: absolute;\n  left: 0;\n  color: #9ca3af; /* light gray */\n  font-weight: bold;\n}\n/* .message-card::before {\n  content: \"AI:\";\n  position: absolute;\n  top: 8px;\n  left: 12px;\n  font-size: 16px;\n  opacity: 0.7;\n} /* subtle chat icon */ */\n</style>\n\n<div class=\"message-card\" style=\"padding-left: 36px;\"> <!-- adjusted for icon space -->\n  {{$json.html}}\n</div>\n"
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        1552,
+        944
+      ],
+      "id": "3ed6e28d-eb70-4130-9a53-d80d9020cecd",
+      "name": "HTML",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "mode": "markdownToHtml",
+        "markdown": "={{ $json.output }}",
+        "destinationKey": "html",
+        "options": {
+          "openLinksInNewWindow": false,
+          "ghCodeBlocks": true,
+          "simpleLineBreaks": true
+        }
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        1072,
+        960
+      ],
+      "id": "9d74ca44-30c4-45ee-8bce-470c3843aa81",
+      "name": "Markdown"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "html",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        960
+      ],
+      "id": "d090f8ac-fa2b-496e-9c85-ec63b59e46e8",
+      "name": "Split Out1"
+    }
+  ],
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Extract text1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qdrant Vector Store": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Qdrant Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract text1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Collection": {
+      "main": [
+        []
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qdrant Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ChatWebhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Markdown": {
+      "main": [
+        [
+          {
+            "node": "Split Out1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out1": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "On form submission": [
+      {
+        "files": [
+          {
+            "filename": "Long Term July August English Conversation.md",
+            "mimetype": "application/octet-stream",
+            "size": 722
+          },
+          {
+            "filename": "Final Prep.md",
+            "mimetype": "application/octet-stream",
+            "size": 8230
+          },
+          {
+            "filename": "Mental Health and Culture Shock (me).md",
+            "mimetype": "application/octet-stream",
+            "size": 1479
+          },
+          {
+            "filename": "formal_curriculum.md",
+            "mimetype": "application/octet-stream",
+            "size": 6927
+          }
+        ],
+        "submittedAt": "2025-12-02T00:19:05.671-05:00",
+        "formMode": "test"
+      }
+    ],
+    "AI Agent": [
+      {
+        "output": "Here is a small list of some recent documents that you uploaded:\n\n1. **Title**: 食べ物とレジリエンス\n   - **Key Questions**:\n     - Why is trying new foods important for adaptation?\n     - What does “resilience” mean?\n     - How can resilience help you when things get hard abroad?\n     - Examples of resilient behaviors in daily life.\n   - **Homework**:\n     - Try one new Canadian dish and describe the experience in English.\n     - Write three sentences about a challenge you overcame using “resilience.”\n     - List two strategies to build resilience abroad.\n\n2. **Title**: 文化は何 第二番\n   - **Key Questions**:\n     - What are Hofstede’s five dimensions of culture?\n     - What are values?\n     - What are your personal values?\n     - What do you think are common cultural values in Canada?\n   - **Homework**:\n     - Observe 5 “good,” “bad,” or “normal” actions.\n     - Note why you judged them so.\n     - Can you map them onto the five cultural dimensions?\n\nIf you need more information or details, feel free to ask!"
+      }
+    ]
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "92d9bc7aaf631c549dd34e41eebcfc6f28008d21e0a81da44e8b86f16f8c275b"
+  }
+}
