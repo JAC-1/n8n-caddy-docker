@@ -1,41 +1,11 @@
-<section class="mt-12 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+<section class="mt-12 rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
+  style="resize: vertical; overflow: hidden;">
   <div class="mb-4">
     <h2 class="text-xl font-semibold text-slate-900">Chat with the AI assistant</h2>
     <p class="text-sm text-slate-600">Ask a question and the bot will reply using your connected workflow.</p>
   </div>
 
-  <form class="space-y-4" hx-post="http://localhost:5678/webhook-test/443e2933-78c3-4ba2-b8f5-71a5e6c9e3f8"
-    hx-target="#chat-response" hx-headers='{"chat-id": "db09c671-5319-45be-9bfb-ff0af25ff2f4"}' hx-swap="beforeend"
-    hx-trigger="submit">
-    <div id="chat-response" class="mt-6 space-y-3 text-sm text-slate-800 max-h-[60vh] min-h-[30vh] overflow-y-auto"
-      aria-live="polite">
-      <!-- Plain-text responses will be appended here by htmx -->
-    </div>
-    <div>
-      <label for="chat-message" class="mb-2 block text-sm font-medium text-slate-700">Message</label>
-      <textarea id="chat-message" name="message" rows="3"
-        class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
-        placeholder="Ask me anything…" required></textarea>
-    </div>
-
-    <div class="flex items-center gap-3">
-      <button type="submit"
-        class="inline-flex items-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
-        Send
-      </button>
-      <button type="reset" id="clear-button"
-        class="text-sm font-medium text-slate-600 hover:text-slate-900">Clear</button>
-      <span class="htmx-indicator text-sm text-slate-500" role="status">Thinking…</span>
-    </div>
-  </form>
-
-  <script>
-    const chatResponseContainer = document.getElementById('chat-response');
-    const button = document.getElementById('clear-button');
-    button.addEventListener('click', () => {
-      chatResponseContainer.innerHTML = '';
-    });
-    ;
-  </script>
+  <iframe src="http://localhost:5678/webhook/c98f7008-71ce-415a-977d-daf84657ab90/chat"
+    class="w-full h-[80%] border border-slate-300 rounded-md my-10"></iframe>
 
 </section>
