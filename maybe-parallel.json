@@ -1,0 +1,219 @@
+{
+  "name": "Parallel Markdown Proofreading Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "/**\n * Node 1: Split Markdown into Chunks\n * Prepares markdown for parallel LLM processing\n */\n\nconst MAX_CHUNK_SIZE = 3000; // Adjust based on your LLM's context window\nconst OVERLAP_SIZE = 200;    // Overlap for context continuity\n\n/**\n * Split markdown intelligently by paragraphs and sections\n */\nfunction splitMarkdown(markdown, maxSize, overlap) {\n  const chunks = [];\n  const paragraphs = markdown.split(/\\n\\n+/);\n  \n  let currentChunk = '';\n  let chunkIndex = 0;\n  let previousOverlap = '';\n  \n  for (const paragraph of paragraphs) {\n    const testChunk = currentChunk + (currentChunk ? '\\n\\n' : '') + paragraph;\n    \n    // If adding this paragraph exceeds limit, save current chunk\n    if (testChunk.length > maxSize && currentChunk.length > 0) {\n      chunks.push({\n        index: chunkIndex,\n        content: currentChunk. trim(),\n        size: currentChunk.length,\n        hasOverlap: chunkIndex > 0\n      });\n      \n      // Get overlap from end of current chunk\n      previousOverlap = currentChunk. slice(-overlap);\n      chunkIndex++;\n      \n      // Start new chunk with overlap\n      currentChunk = previousOverlap + '\\n\\n' + paragraph;\n    } else {\n      currentChunk = testChunk;\n    }\n  }\n  \n  // Add final chunk\n  if (currentChunk. trim(). length > 0) {\n    chunks.push({\n      index: chunkIndex,\n      content: currentChunk.trim(),\n      size: currentChunk.length,\n      hasOverlap: chunkIndex > 0\n    });\n  }\n  \n  return chunks;\n}\n\n// Get input markdown\nconst inputMarkdown = $input.first(). json.markdown || \n                      $input.first().json. content || \n                      $input.first().json.text;\n\nif (!inputMarkdown) {\n  throw new Error('No markdown content found.  Expected field: markdown, content, or text');\n}\n\n// Split into chunks\nconst chunks = splitMarkdown(inputMarkdown, MAX_CHUNK_SIZE, OVERLAP_SIZE);\n\n// Return each chunk as a separate item for parallel processing\nreturn chunks.map(chunk => ({\n  json: {\n    chunkContent: chunk.content,\n    chunkIndex: chunk.index,\n    totalChunks: chunks.length,\n    chunkSize: chunk.size,\n    chunkContext: `[Processing chunk ${chunk.index + 1} of ${chunks.length}]`,\n    originalDocumentLength: inputMarkdown.length\n  }\n}));"
+      },
+      "name": "Split Markdown",
+      "type": "n8n-nodes-base.code",
+      "position": [460, 240],
+      "id": "split-markdown-node",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "llm-prompt-assignment",
+              "name": "llmPrompt",
+              "type": "string",
+              "value": "={{ \"You are a professional English proofreader for educational materials.\\n\\n\" + $json.chunkContext + \"\\n\\nAnalyze the following markdown content and identify ALL linguistic errors, formatting issues, and OCR artifacts.\\n\\nMarkdown Content:\\n```markdown\\n\" + $json.chunkContent + \"\\n```\\n\\nReturn your analysis as a JSON object with this EXACT structure (no markdown code blocks, just pure JSON):\\n\\n{\\n  \\\"output\\\": [\\n    {\\n      \\\"unit\\\": \\\"Unit Name\\\",\\n      \\\"page\\\": \\\"Page Number\\\",\\n      \\\"errors\\\": [\\n        {\\n          \\\"elementType\\\": \\\"heading|sentence|list|etc\\\",\\n          \\\"linguisticElement\\\": \\\"The exact text with the error\\\",\\n          \\\"location\\\": \\\"line X\\\",\\n          \\\"errorType\\\": \\\"grammar|spelling|formatting|etc\\\",\\n          \\\"severity\\\": \\\"minor|moderate|major\\\",\\n          \\\"suggestion\\\": \\\"Correction suggestion\\\",\\n          \\\"note\\\": \\\"Additional context\\\"\\n        }\\n      ]\\n    }\\n  ],\\n  \\\"metadata\\\": {\\n    \\\"generatedAt\\\": \\\"\" + new Date().toISOString() + \"\\\",\\n    \\\"proofreader\\\": \\\"CBT Editor\\\",\\n    \\\"model\\\": \\\"CBT-Text-Edit\\\",\\n    \\\"version\\\": \\\"1.0\\\",\\n    \\\"totalErrors\\\": 0\\n  }\\n}\\n\\nIMPORTANT: Return ONLY valid JSON. No markdown code blocks, no explanations, just the JSON object.\" }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Prepare LLM Prompt",
+      "type": "n8n-nodes-base.set",
+      "position": [680, 240],
+      "id": "prepare-prompt-node",
+      "typeVersion": 3. 4
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "temperature": 0.3,
+          "maxTokens": 4000
+        },
+        "text": "={{ $json.llmPrompt }}",
+        "responseFormat": "json_object"
+      },
+      "name": "OpenAI LLM",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [900, 240],
+      "id": "openai-llm-node",
+      "typeVersion": 1,
+      "credentials": {
+        "openAiApi": {
+          "id": "your-openai-credential-id",
+          "name": "OpenAI API"
+        }
+      },
+      "notes": "Configure with your preferred LLM:\n- OpenAI GPT-4\n- Anthropic Claude\n- Google Gemini\n- Local LLM\n\nIMPORTANT: Disable 'Execute Once for All Items' to enable parallel processing"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "/**\n * Node 4: Parse and Merge LLM Outputs\n * Consolidates all parallel LLM responses into single result\n */\n\nconst allItems = $input.all();\n\n// Initialize merged result\nconst mergedResult = {\n  output: [],\n  metadata: {\n    generatedAt: new Date().toISOString(),\n    proofreader: null,\n    model: null,\n    version: null,\n    totalErrors: 0,\n    totalChunks: allItems.length,\n    chunksProcessed: 0,\n    parseErrors: []\n  }\n};\n\n// Track unique metadata values\nconst metadataValues = {\n  proofreader: new Set(),\n  model: new Set(),\n  version: new Set()\n};\n\n// Process each chunk\nallItems.forEach((item, index) => {\n  try {\n    // Get the LLM output (might be in different fields depending on LLM node)\n    const outputString = item.json.output || \n                        item.json.response || \n                        item.json.message || \n                        item.json.text;\n    \n    // Parse if it's a string, otherwise use as-is\n    const parsedData = typeof outputString === 'string' \n      ? JSON.parse(outputString) \n      : outputString;\n    \n    // Extract output array\n    const outputArray = parsedData.output || [];\n    \n    // Merge outputs with chunk tracking\n    if (Array.isArray(outputArray)) {\n      outputArray.forEach(section => {\n        mergedResult.output.push({\n          ... section,\n          sourceChunk: index,\n          chunkIndex: item.json.chunkIndex\n        });\n      });\n    }\n    \n    // Aggregate metadata\n    if (parsedData.metadata) {\n      const meta = parsedData.metadata;\n      \n      if (meta.totalErrors) {\n        mergedResult.metadata.totalErrors += meta.totalErrors;\n      }\n      \n      if (meta.proofreader) metadataValues.proofreader.add(meta.proofreader);\n      if (meta.model) metadataValues. model.add(meta.model);\n      if (meta.version) metadataValues.version. add(meta.version);\n    }\n    \n    mergedResult.metadata.chunksProcessed++;\n    \n  } catch (error) {\n    mergedResult.metadata.parseErrors.push({\n      chunkIndex: index,\n      error: error.message,\n      rawPreview: (item.json.output || '').substring(0, 200)\n    });\n    console.error(`Parse error in chunk ${index}:`, error.message);\n  }\n});\n\n// Set consolidated metadata\nmergedResult.metadata.proofreader = Array.from(metadataValues.proofreader).join(', ') || 'CBT Editor';\nmergedResult.metadata.model = Array.from(metadataValues.model). join(', ') || 'Unknown';\nmergedResult.metadata.version = Array.from(metadataValues.version).join(', ') || '1.0';\n\n// Sort by page number, then chunk index\nmergedResult.output.sort((a, b) => {\n  const pageCompare = (parseInt(a.page) || 0) - (parseInt(b.page) || 0);\n  if (pageCompare !== 0) return pageCompare;\n  return (a.chunkIndex || 0) - (b.chunkIndex || 0);\n});\n\n// Calculate statistics\nmergedResult.metadata.statistics = {\n  totalPages: new Set(mergedResult.output. map(o => o.page)).size,\n  totalUnits: new Set(mergedResult.output.map(o => o.unit)).size,\n  totalSections: mergedResult.output.length,\n  errorsBySeverity: {},\n  errorsByType: {},\n  errorsByElement: {}\n};\n\n// Aggregate error statistics\nmergedResult.output.forEach(section => {\n  if (section.errors && Array.isArray(section.errors)) {\n    section.errors. forEach(error => {\n      // By severity\n      const severity = error.severity || 'unknown';\n      mergedResult.metadata.statistics.errorsBySeverity[severity] = \n        (mergedResult.metadata.statistics.errorsBySeverity[severity] || 0) + 1;\n      \n      // By type\n      const errorType = error.errorType || 'unknown';\n      mergedResult.metadata.statistics.errorsByType[errorType] = \n        (mergedResult.metadata.statistics.errorsByType[errorType] || 0) + 1;\n      \n      // By element\n      const elementType = error.elementType || 'unknown';\n      mergedResult.metadata.statistics.errorsByElement[elementType] = \n        (mergedResult.metadata.statistics.errorsByElement[elementType] || 0) + 1;\n    });\n  }\n});\n\n// Clean up if no parse errors\nif (mergedResult.metadata.parseErrors.length === 0) {\n  delete mergedResult.metadata.parseErrors;\n}\n\n// Return single merged item\nreturn [{ json: mergedResult }];"
+      },
+      "name": "Merge Results",
+      "type": "n8n-nodes-base.code",
+      "position": [1120, 240],
+      "id": "merge-results-node",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "fileContent": "={{ JSON.stringify($json, null, 2) }}",
+        "fileName": "={{ \"proofreading-results-\" + new Date().toISOString(). split('T')[0] + \". json\" }}",
+        "options": {}
+      },
+      "name": "Save to File",
+      "type": "n8n-nodes-base. writeFile",
+      "position": [1340, 240],
+      "id": "save-file-node",
+      "typeVersion": 1,
+      "notes": "Optional: Save results to file\nAlternatives:\n- Send to database\n- Post to webhook\n- Send via email\n- Upload to cloud storage"
+    },
+    {
+      "parameters": {
+        "content": "## Parallel Markdown Proofreading Workflow\n\n### How It Works:\n\n1. **Split Markdown** - Intelligently chunks large documents\n2. **Prepare Prompt** - Creates LLM-ready prompts for each chunk\n3.  **OpenAI LLM** - Processes ALL chunks in PARALLEL (key setting: disable \"Execute Once for All Items\")\n4. **Merge Results** - Consolidates all responses into single output\n5. **Save to File** - Exports final JSON\n\n### Configuration:\n\n#### For True Parallel Processing:\n- In the **OpenAI LLM** node settings\n- Go to **Settings** tab\n- Find **\"Execute Once for All Items\"**\n- **DISABLE** this option\n- This makes n8n send ALL items to the LLM simultaneously\n\n#### For Batch Processing (cheaper):\n- **ENABLE** \"Execute Once for All Items\"\n- LLM receives all chunks in one request\n- Fewer API calls, lower cost\n\n### Customization:\n\n- Adjust `MAX_CHUNK_SIZE` in Split node\n- Change LLM model in OpenAI node\n- Modify prompt template in Prepare Prompt node\n- Add error notifications\n- Implement retry logic",
+        "height": 460,
+        "width": 380
+      },
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [240, 40],
+      "id": "sticky-note-instructions",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.webhookUrl }}",
+        "options": {
+          "timeout": 30000
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "results",
+              "value": "={{ JSON.stringify($json) }}"
+            },
+            {
+              "name": "totalErrors",
+              "value": "={{ $json.metadata.totalErrors }}"
+            },
+            {
+              "name": "status",
+              "value": "completed"
+            }
+          ]
+        }
+      },
+      "name": "Send to Webhook (Optional)",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1340, 380],
+      "id": "webhook-node",
+      "typeVersion": 4. 2,
+      "disabled": true,
+      "notes": "Optional: Post results to external system\nDisabled by default"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "error-check",
+              "leftValue": "={{ $json.metadata.parseErrors }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Check for Errors",
+      "type": "n8n-nodes-base.if",
+      "position": [1120, 420],
+      "id": "error-check-node",
+      "typeVersion": 2,
+      "notes": "Optional: Add error handling\nCan trigger alerts or retry logic"
+    }
+  ],
+  "connections": {
+    "Split Markdown": {
+      "main": [
+        [
+          {
+            "node": "Prepare LLM Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare LLM Prompt": {
+      "main": [
+        [
+          {
+            "node": "OpenAI LLM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI LLM": {
+      "main": [
+        [
+          {
+            "node": "Merge Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Results": {
+      "main": [
+        [
+          {
+            "node": "Save to File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check for Errors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-12-04T00:00:00.000Z",
+  "versionId": "1"
+}

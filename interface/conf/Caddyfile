@@ -2,14 +2,4 @@ localhost {
 root * /srv
 templates
 file_server
-
-@api path /rest/*
-reverse_proxy @api http://n8n:5678 {
-header_up X_N8N_API_KEY "{$N8N_API_KEY}"
-}
-
-@ws path /websocket/*
-reverse_proxy @ws http://n8n:5678 {
-header_up X_N8N_API_KEY "{$N8N_API_KEY}"
-}
 }

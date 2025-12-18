@@ -1,0 +1,309 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Upload Docs",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Docs",
+              "fieldType": "file",
+              "acceptFileTypes": ".png"
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        0,
+        144
+      ],
+      "id": "751a8bb8-6e04-4a07-8243-3f9ca346556a",
+      "name": "On form submission",
+      "webhookId": "cff86fd6-8ecd-48d9-ad63-8d9cf765f3dd"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "Docs",
+        "options": {
+          "includeBinary": true
+        }
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        224,
+        160
+      ],
+      "id": "5d8bb262-16ae-4540-a083-3aec1c37f170",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "output"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        624,
+        0
+      ],
+      "id": "a7cc33a6-8986-440b-9c72-2a7c2f5528b1",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "html": "<! DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Textbook Proofreading Report</title>\n  <style>\n /* ============================================\n   TEXTBOOK PROOFREADING REPORT STYLES\n   Optimized for n8n HTML templates\n   ============================================ */\n\n/* ============================================\n   GLOBAL STYLES & RESET\n   ============================================ */\n* { \n  margin: 0; \n  padding: 0; \n  box-sizing: border-box; \n}\n\nbody {\n  padding: 20px;\n  background: #f5f7fa;\n  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Helvetica Neue', sans-serif;\n  color: #2c3e50;\n  line-height: 1.6;\n}\n\n/* ============================================\n   MAIN CARD CONTAINER\n   ============================================ */\n.card {\n  max-width: 1600px;\n  margin: 0 auto;\n  background: white;\n  border-radius: 12px;\n  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);\n  overflow: hidden;\n}\n\n/* ============================================\n   HEADER SECTION\n   ============================================ */\n.header {\n  background: linear-gradient(135deg, #e63946 0%, #d62828 100%);\n  color: white;\n  padding: 32px 40px;\n  text-align: center;\n}\n\n.header h1 {\n  font-size: 28px;\n  font-weight: 600;\n  margin-bottom: 6px;\n  letter-spacing: -0.3px;\n}\n\n.header p {\n  font-size: 14px;\n  opacity: 0.95;\n  font-weight: 400;\n}\n\n/* ============================================\n   SUMMARY STATISTICS GRID\n   ============================================ */\n.summary-stats {\n  display: grid;\n  grid-template-columns: repeat(4, 1fr);\n  gap: 20px;\n  padding: 32px 40px;\n  background: #fafbfc;\n  border-bottom: 1px solid #e1e4e8;\n}\n\n.stat-box {\n  background: white;\n  padding: 20px;\n  border-radius: 10px;\n  border: 1px solid #e1e4e8;\n  text-align: center;\n  transition: all 0.2s ease;\n}\n\n.stat-box:hover {\n  transform: translateY(-2px);\n  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);\n  border-color: #d1d5db;\n}\n\n.stat-label {\n  font-size: 11px;\n  color: #6a737d;\n  text-transform: uppercase;\n  letter-spacing: 0.8px;\n  font-weight: 600;\n  margin-bottom: 10px;\n  display: block;\n}\n\n.stat-value {\n  font-size: 32px;\n  font-weight: 700;\n  color: #e63946;\n  line-height: 1;\n  display: block;\n}\n\n/* ============================================\n   UNITS CONTAINER\n   ============================================ */\n.units-container {\n  padding: 32px 40px;\n  background: white;\n}\n\n.unit-section {\n  margin-bottom: 32px;\n  border: 1px solid #e1e4e8;\n  border-radius: 10px;\n  overflow: hidden;\n  background: white;\n  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);\n}\n\n.unit-section:last-child {\n  margin-bottom: 0;\n}\n\n/* ============================================\n   UNIT HEADER\n   ============================================ */\n.unit-header {\n  background: #f6f8fa;\n  padding: 20px 24px;\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  border-bottom: 1px solid #e1e4e8;\n  gap: 20px;\n}\n\n.unit-title {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  flex: 1;\n}\n\n.unit-name {\n  font-size: 17px;\n  font-weight: 600;\n  color: #24292e;\n  word-break: break-word;\n}\n\n.unit-page {\n  font-size: 13px;\n  color: #6a737d;\n  font-weight: 500;\n}\n\n.error-count {\n  background: #fff5f5;\n  padding: 8px 16px;\n  border-radius: 6px;\n  font-size: 13px;\n  font-weight: 600;\n  color: #e63946;\n  border: 1px solid #fecaca;\n  white-space: nowrap;\n  flex-shrink: 0;\n}\n\n/* ============================================\n   NO ERRORS STATE\n   ============================================ */\n.no-errors {\n  padding: 60px 24px;\n  text-align: center;\n  color: #6a737d;\n}\n\n.no-errors-icon {\n  font-size: 48px;\n  margin-bottom: 12px;\n  display: block;\n}\n\n.no-errors p {\n  font-size: 14px;\n  color: #6a737d;\n}\n\n/* ============================================\n   ERRORS TABLE STRUCTURE\n   ============================================ */\n.errors-table {\n  width: 100%;\n  border-collapse: collapse;\n  background: white;\n}\n\n.errors-table thead {\n  background: #f6f8fa;\n}\n\n.errors-table th {\n  padding: 16px 20px;\n  text-align: left;\n  font-size: 11px;\n  font-weight: 600;\n  text-transform: uppercase;\n  letter-spacing: 0.5px;\n  color: #6a737d;\n  border-bottom: 2px solid #e1e4e8;\n}\n\n.errors-table tbody tr {\n  border-bottom: 1px solid #e1e4e8;\n  transition: background-color 0.15s ease;\n}\n\n.errors-table tbody tr:last-child {\n  border-bottom: none;\n}\n\n.errors-table tbody tr:hover {\n  background-color: #f6f8fa;\n}\n\n.errors-table td {\n  padding: 20px;\n  vertical-align: top;\n  font-size: 14px;\n}\n\n/* Make tag columns narrower and center vertically */\n.errors-table td:nth-child(1),\n.errors-table td:nth-child(2),\n.errors-table td:nth-child(3) {\n  width: 140px;\n  vertical-align: middle;\n}\n\n/* Original text column */\n.errors-table td:nth-child(4) {\n  width: 28%;\n}\n\n/* Suggestion column - takes remaining space */\n.errors-table td:nth-child(5) {\n  width: auto;\n}\n\n/* ============================================\n   TAG/BADGE STYLING\n   ============================================ */\n.tag {\n  display: inline-block;\n  padding: 6px 12px;\n  border-radius: 6px;\n  font-size: 11px;\n  font-weight: 600;\n  text-transform: uppercase;\n  letter-spacing: 0.4px;\n  white-space: nowrap;\n  border: 1px solid;\n}\n\n/* Element Type Tags */\n.tag-element {\n  background: #dbeafe;\n  color: #1e40af;\n  border-color: #93c5fd;\n}\n\n/* Error Type Tags - Various colors for different types */\n.tag-error-punctuation {\n  background: #fef3c7;\n  color: #92400e;\n  border-color: #fde68a;\n}\n\n.tag-error-style_consistency {\n  background: #e0e7ff;\n  color: #3730a3;\n  border-color: #c7d2fe;\n}\n\n.tag-error-grammar {\n  background: #fecaca;\n  color: #991b1b;\n  border-color: #fca5a5;\n}\n\n.tag-error-spelling {\n  background: #fed7aa;\n  color: #9a3412;\n  border-color: #fdba74;\n}\n\n.tag-error-default {\n  background: #f1f5f9;\n  color: #475569;\n  border-color: #cbd5e1;\n}\n\n/* Severity Tags */\n.tag-severity-minor {\n  background: #fef3c7;\n  color: #92400e;\n  border-color: #fde68a;\n}\n\n.tag-severity-suggestion {\n  background: #d1fae5;\n  color: #065f46;\n  border-color: #6ee7b7;\n}\n\n.tag-severity-major {\n  background: #fecaca;\n  color: #991b1b;\n  border-color: #fca5a5;\n}\n\n/* ============================================\n   TEXT BOXES FOR CONTENT DISPLAY\n   ============================================ */\n.text-box {\n  padding: 14px 16px;\n  border-radius: 8px;\n  line-height: 1.7;\n  word-wrap: break-word;\n  white-space: pre-wrap;\n  font-size: 14px;\n  border-left: 4px solid;\n}\n\n/* Original text styling */\n.original-text {\n  border-left-color: #f97316;\n  background: #fff7ed;\n  color: #7c2d12;\n}\n\n/* Suggested correction styling */\n.suggested-text {\n  border-left-color: #10b981;\n  background: #ecfdf5;\n  color: #065f46;\n  font-weight: 500;\n}\n\n/* Note/explanation styling */\n.note-text {\n  border-left-color: #8b5cf6;\n  background: #f5f3ff;\n  font-size: 13px;\n  color: #5b21b6;\n  margin-top: 10px;\n  padding-left: 36px;\n  position: relative;\n}\n\n/* Add speech bubble icon before notes */\n.note-text::before {\n  content: \"💬\";\n  position: absolute;\n  left: 12px;\n  top: 14px;\n  font-size: 16px;\n}\n\n/* ============================================\n   RESPONSIVE DESIGN - TABLET\n   ============================================ */\n@media (max-width: 1200px) {\n  .summary-stats {\n    grid-template-columns: repeat(2, 1fr);\n  }\n}\n\n/* ============================================\n   RESPONSIVE DESIGN - MOBILE\n   ============================================ */\n@media (max-width: 768px) {\n  body {\n    padding: 12px;\n  }\n\n  .header {\n    padding: 24px 20px;\n  }\n\n  .header h1 {\n    font-size: 22px;\n  }\n\n  . header p {\n    font-size: 13px;\n  }\n\n  . summary-stats {\n    padding: 20px;\n    gap: 12px;\n    grid-template-columns: 1fr 1fr;\n  }\n\n  .stat-box {\n    padding: 16px;\n  }\n\n  .stat-value {\n    font-size: 24px;\n  }\n\n  . stat-label {\n    font-size: 10px;\n  }\n\n  . units-container {\n    padding: 20px;\n  }\n\n  . unit-section {\n    margin-bottom: 20px;\n  }\n\n  . unit-header {\n    padding: 16px;\n    flex-direction: column;\n    align-items: flex-start;\n    gap: 10px;\n  }\n\n  .error-count {\n    align-self: flex-start;\n  }\n\n  .errors-table th,\n  .errors-table td {\n    padding: 12px;\n    font-size: 13px;\n  }\n\n  .errors-table th {\n    font-size: 10px;\n  }\n\n  . text-box {\n    padding: 12px;\n    font-size: 13px;\n  }\n\n  .note-text {\n    padding-left: 32px;\n  }\n\n  .note-text::before {\n    font-size: 14px;\n    top: 12px;\n  }\n\n  /* Stack table columns on very small screens if needed */\n  .errors-table td:nth-child(1),\n  .errors-table td:nth-child(2),\n  .errors-table td:nth-child(3) {\n    width: auto;\n  }\n}\n\n/* ============================================\n   RESPONSIVE DESIGN - SMALL MOBILE\n   ============================================ */\n@media (max-width: 480px) {\n  .summary-stats {\n    grid-template-columns: 1fr;\n  }\n\n  .tag {\n    font-size: 10px;\n    padding: 5px 10px;\n  }\n\n  .unit-name {\n    font-size: 15px;\n  }\n\n  .unit-page {\n    font-size: 12px;\n  }\n}\n\n/* ============================================\n   PRINT STYLES (OPTIONAL)\n   ============================================ */\n@media print {\n  body {\n    padding: 0;\n    background: white;\n  }\n\n  .card {\n    box-shadow: none;\n    border-radius: 0;\n  }\n\n  .stat-box:hover,\n  .unit-section:hover {\n    transform: none;\n    box-shadow: none;\n  }\n\n  .errors-table tbody tr:hover {\n    background-color: transparent;\n  }\n}\n  </style>\n</head>\n<body>\n\n<div class=\"card\">\n  <!-- ==========================================\n       HEADER SECTION\n       ========================================== -->\n  <div class=\"header\">\n    <h1>📋 Textbook Proofreading Report</h1>\n    <p>Linguistic analysis and error detection for educational materials</p>\n  </div>\n\n  <!-- ==========================================\n       SUMMARY STATISTICS\n       ========================================== -->\n  <div class=\"summary-stats\">\n    <div class=\"stat-box\">\n      <div class=\"stat-label\">📄 Data Arrays</div>\n      <div class=\"stat-value\">{{ $json.output.length }}</div>\n    </div>\n    <div class=\"stat-box\">\n      <div class=\"stat-label\">⚠️ Total Issues</div>\n      <div class=\"stat-value\">\n        {{ $json.output.reduce((sum, arr) => sum + (arr[0]?.errors?. length || 0), 0) }}\n      </div>\n    </div>\n    <div class=\"stat-box\">\n      <div class=\"stat-label\">🔍 Minor Issues</div>\n      <div class=\"stat-value\">\n        {{ $json.output.reduce((sum, arr) => {\n          const errors = arr[0]?.errors || [];\n          return sum + errors. filter(e => e.severity === 'minor').length;\n        }, 0) }}\n      </div>\n    </div>\n    <div class=\"stat-box\">\n      <div class=\"stat-label\">💡 Suggestions</div>\n      <div class=\"stat-value\">\n        {{ $json.output.reduce((sum, arr) => {\n          const errors = arr[0]?. errors || [];\n          return sum + errors.filter(e => e. severity === 'suggestion').length;\n        }, 0) }}\n      </div>\n    </div>\n  </div>\n\n  <!-- ==========================================\n       UNITS/FILES CONTENT AREA\n       ========================================== -->\n  <div class=\"units-container\">\n    \n    <!-- Loop through each array in output and render unit sections -->\n    {{ $json.output.map((arr, arrIdx) => {\n      // Extract the unit data from the first element of the array\n      const data = arr[0];\n      if (!data) return \"\";\n      \n      const unit = data.unit || \"Unknown Unit\";\n      const page = data.page ??  \"? \";\n      const errors = data. errors || [];\n      \n      return `\n        <div class=\"unit-section\">\n          <!-- Unit Header with metadata -->\n          <div class=\"unit-header\">\n            <div class=\"unit-title\">\n              <div class=\"unit-name\">${unit}</div>\n              <div class=\"unit-page\">📄 Page ${page}</div>\n            </div>\n            <div class=\"error-count\">\n              ${errors.length} issue${errors.length !== 1 ? 's' : ''}\n            </div>\n          </div>\n\n          ${errors.length === 0 ?  `\n            <!-- Display when no errors are found -->\n            <div class=\"no-errors\">\n              <div class=\"no-errors-icon\">✅</div>\n              <p>No issues found — this section is perfect! </p>\n            </div>\n          ` : `\n            <!-- Display errors table when errors exist -->\n            <table class=\"errors-table\">\n              <thead>\n                <tr>\n                  <th style=\"width: 12%;\">Element Type</th>\n                  <th style=\"width: 14%;\">Error Type</th>\n                  <th style=\"width: 10%;\">Severity</th>\n                  <th style=\"width: 30%;\">Original Text</th>\n                  <th style=\"width: 34%;\">Suggestion & Notes</th>\n                </tr>\n              </thead>\n              <tbody>\n                ${errors.map((error, errorIdx) => {\n                  // Extract error details with fallbacks\n                  const elementType = error.elementType || 'unknown';\n                  const errorType = error.errorType || 'unknown';\n                  const severity = error.severity || 'minor';\n                  const originalText = error. linguisticElement || 'N/A';\n                  const suggestion = error.suggestion || 'N/A';\n                  const note = error.note || '';\n                  \n                  // Sanitize error type for CSS class (replace spaces with underscores)\n                  const errorTypeClass = errorType.replace(/\\s+/g, '_');\n                  \n                  return `\n                    <tr>\n                      <!-- Element Type Column -->\n                      <td>\n                        <span class=\"tag tag-element\">${elementType}</span>\n                      </td>\n\n                      <!-- Error Type Column -->\n                      <td>\n                        <span class=\"tag tag-error-${errorTypeClass}\">${errorType}</span>\n                      </td>\n\n                      <!-- Severity Column -->\n                      <td>\n                        <span class=\"tag tag-severity-${severity}\">${severity}</span>\n                      </td>\n\n                      <!-- Original Text Column -->\n                      <td>\n                        <div class=\"text-box original-text\">${originalText}</div>\n                      </td>\n\n                      <!-- Suggestion and Note Column -->\n                      <td>\n                        <div class=\"text-box suggested-text\">${suggestion}</div>\n                        ${note ? `<div class=\"text-box note-text\">💬 ${note}</div>` : ''}\n                      </td>\n                    </tr>\n                  `;\n                }).join('')}\n              </tbody>\n            </table>\n          `}\n        </div>\n      `;\n    }).join('') }}\n\n  </div>\n</div>\n\n</body>\n</html>"
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        960,
+        0
+      ],
+      "id": "e925c6c3-c70e-4801-8c48-ec5ca9d51fb1",
+      "name": "HTML"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "={{ $json.html }}"
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.3,
+      "position": [
+        1232,
+        0
+      ],
+      "id": "67e88d60-d4c4-46e8-aeae-8f2dc665c3d1",
+      "name": "Form",
+      "webhookId": "89935855-4648-45c8-971d-03c2fafdd39c"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        448,
+        160
+      ],
+      "id": "3d36dc54-d772-452d-a7dc-e64eb11877ff",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5-nano",
+          "mode": "list",
+          "cachedResultName": "gpt-5-nano"
+        },
+        "builtInTools": {},
+        "options": {
+          "reasoningEffort": "low"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        848,
+        368
+      ],
+      "id": "2a17eec3-bd16-4227-bd71-c839f515c75d",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "52i4qybiLiN2qpeT",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Function node – 100% works with your current broken GPT output\nconst rawItems = $input.all();\n\nconst results = rawItems.map(item => {\n  try {\n    // Step 1: Get the escaped JSON string from \"text\"\n    const escapedJsonString = item.json.output;\n\n    if (!escapedJsonString) {\n      throw new Error(\"No 'text' field found\");\n    }\n\n    // Step 2: Unescape and parse it safely\n    const cleanedJsonString = escapedJsonString\n      .replace(/[#]*/g, '')    // remove newlines\n      // .replace(/\\\\\"/g, '\"')   // fix escaped quotes\n      // .replace(/^\"/, '')      // remove leading quote if present\n      // .replace(/\"$/, '');     // remove trailing quote if present\n\n    const parsed = JSON.parse(cleanedJsonString);\n\n    // Step 3: Fix any extra wrapper (GPT sometimes does \"output\": { \"output\": [...] })\n    const finalData = parsed.output?.output ? parsed.output : parsed;\n\n    return { json: finalData };\n  } catch (error) {\n    // If anything goes wrong, return raw for debugging\n    return {\n      json: {\n        parsingError: error.message,\n        rawText: item.json.text?.slice(0, 500) + \"...\"\n      }\n    };\n  }\n});\n\nconst blah = $(\"Split Out\").first().json\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        304
+      ],
+      "id": "e3af4e5f-8d0d-4684-b27a-25ae6f40ffe6",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $input.item.json[0].content[0].text }}",
+        "options": {
+          "systemMessage": "=ONLY RETURN THE JSON IN THE SCHEMA SPECIFIED BELLOW\n\nCopy edit the markdown input from the ocr. You are a professional in CBT (Communicative based Teaching), and other fundamental EFL and ESL fundamentals.\n\nUse the following info for this request:\n\nTextbook Unit : {{ $('Split Out').item.json.filename }}\nPage : {{ Number($('Split Out').item.json.filename.replace(/[^\\d]/g, ''))}}\n\n\n{\n  \"output\": [\n    {\n      \"unit\": \"string\",\n      \"page\": \"string or number\",\n      \"errors\": [\n        {\n          \"elementType\": \"title|subtitle|sectionHeader|bodyText|instruction|dialogueSpeaker|dialogue|exampleSentence|translation|rubyText|tableContent|caption|footnote|exerciseNumber|answerKey|other\",\n          \"linguisticElement\": \"exact text being corrected\",\n          \"location\": \"optional string\",\n          \"errorType\": \"grammar|spelling|punctuation|capitalization|formatting|style_consistency|translation_accuracy|naturalness|cultural_appropriateness|typography|register|terminology|layout|other\",\n          \"severity\": \"critical|major|minor|suggestion\",\n          \"suggestion\": \"clear correction\",\n          \"note\": \"optional explanation\"\n        }\n      ]\n    }\n  ],\n  \n}\n\nCRITICAL RULES:\n- The root must have \"output\" as an ARRAY directly (never wrap it in another object)\n- Never put the array inside \"output\": { \"output\": [...] }\n- Never use markdown code blocks\n- Respond with raw JSON only\n\nNow proofread the attached page."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        896,
+        240
+      ],
+      "id": "aa8f739a-6d0d-4879-9a00-346bb5b68969",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "text": "Extract all text from this image. It will be used for copy editing later.  Make sure to include the location of where it is on the page too (header, exercise question, etc)",
+        "inputType": "base64",
+        "binaryPropertyName": "=Docs_{{$runIndex}}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        688,
+        240
+      ],
+      "id": "24cd995c-6caf-44e6-b99d-06f3355d5430",
+      "name": "Analyze image",
+      "credentials": {
+        "openAiApi": {
+          "id": "52i4qybiLiN2qpeT",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "Form",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analyze image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze image": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "92d9bc7aaf631c549dd34e41eebcfc6f28008d21e0a81da44e8b86f16f8c275b"
+  }
+}
